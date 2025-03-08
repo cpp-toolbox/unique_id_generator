@@ -6,12 +6,16 @@
 #include <unordered_set>
 #include <iostream>
 
-class UniqueIDGenerator {
+class IDGenerator {
   public:
-    UniqueIDGenerator() {}
-    virtual ~UniqueIDGenerator() = default;
+    virtual int get_id() = 0;
+    virtual void reclaim_id(int id) = 0;
+    virtual ~IDGenerator() {}
+};
 
-    virtual int get_id() {
+class UniqueIDGenerator : public IDGenerator {
+  public:
+    int get_id() override {
         if (!reclaimed_ids.empty()) {
             int id = reclaimed_ids.front();
             reclaimed_ids.pop();
@@ -23,7 +27,7 @@ class UniqueIDGenerator {
         return id;
     }
 
-    virtual void reclaim_id(int id_value) {
+    void reclaim_id(int id_value) override {
         if (used_ids.find(id_value) == used_ids.end()) {
             throw std::invalid_argument("Invalid or already reclaimed ID");
         }
@@ -46,13 +50,12 @@ class UniqueIDGenerator {
         return os;
     }
 
-  protected:
     int next_id = 0;
     std::unordered_set<int> used_ids;
     std::queue<int> reclaimed_ids;
 };
 
-class BoundedUniqueIDGenerator {
+class BoundedUniqueIDGenerator : public IDGenerator {
   public:
     explicit BoundedUniqueIDGenerator(int max_value) : max_value(max_value), next_id(0) {
         if (max_value <= 0) {
@@ -64,7 +67,7 @@ class BoundedUniqueIDGenerator {
         }
     }
 
-    int get_id() {
+    int get_id() override {
         if (available_ids.empty()) {
             throw std::runtime_error("Maximum ID limit reached");
         }
@@ -75,7 +78,7 @@ class BoundedUniqueIDGenerator {
         return id;
     }
 
-    void reclaim_id(int id_value) {
+    void reclaim_id(int id_value) override {
         if (id_value < 0 || id_value >= max_value || used_ids.find(id_value) == used_ids.end()) {
             throw std::invalid_argument("Invalid or already reclaimed ID");
         }

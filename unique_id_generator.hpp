@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <unordered_set>
 #include <iostream>
+#include <sstream>
 
 class IDGenerator {
   public:
@@ -80,7 +81,7 @@ class BoundedUniqueIDGenerator : public IDGenerator {
 
     void reclaim_id(int id_value) override {
         if (id_value < 0 || id_value >= max_value || used_ids.find(id_value) == used_ids.end()) {
-            throw std::invalid_argument("Invalid or already reclaimed ID");
+            throw std::invalid_argument("Invalid or already reclaimed ID: " + std::to_string(id_value));
         }
 
         used_ids.erase(id_value);
@@ -101,17 +102,22 @@ class BoundedUniqueIDGenerator : public IDGenerator {
 
     double get_used_percentage() const { return (static_cast<double>(used_ids.size()) / max_value) * 100.0; }
 
-    friend std::ostream &operator<<(std::ostream &os, const BoundedUniqueIDGenerator &generator) {
-        os << "Used IDs: [";
-        std::vector<int> ids = generator.get_used_ids();
+    std::string to_string() const {
+        std::ostringstream ss;
+        ss << "Used IDs: [";
+        std::vector<int> ids = get_used_ids();
         for (size_t i = 0; i < ids.size(); ++i) {
-            os << ids[i];
+            ss << ids[i];
             if (i < ids.size() - 1) {
-                os << ", ";
+                ss << ", ";
             }
         }
-        os << "] | Used: " << generator.get_used_percentage() << "%";
-        return os;
+        ss << "] | Used: " << get_used_percentage() << "%";
+        return ss.str();
+    }
+
+    friend std::ostream &operator<<(std::ostream &os, const BoundedUniqueIDGenerator &generator) {
+        return os << generator.to_string();
     }
 
   private:

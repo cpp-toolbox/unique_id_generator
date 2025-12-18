@@ -10,54 +10,6 @@
 
 #include "sbpt_generated_includes.hpp"
 
-class IdGenerator {
-  private:
-    unsigned int next_id = 0;
-    std::unordered_set<unsigned int> used_ids;
-    std::queue<unsigned int> reclaimed_ids;
-
-  public:
-    LogSection::LogMode log_mode = LogSection::LogMode::inherit;
-
-  public:
-    unsigned int get_id() {
-        GlobalLogSection _("get_id");
-
-        unsigned int id;
-
-        if (!reclaimed_ids.empty()) {
-            global_logger->debug("we are using a reclaimed id");
-            id = reclaimed_ids.front();
-            reclaimed_ids.pop();
-        } else {
-            global_logger->debug("we are incrementing to get an id");
-            id = next_id++;
-            // Wrap-around safety check
-            if (next_id == std::numeric_limits<unsigned int>::max()) {
-                global_logger->warn("we hit the numerical max id");
-                next_id = 0;
-            }
-        }
-
-        global_logger->debug("generated id: {}", id);
-
-        used_ids.insert(id);
-        return id;
-    }
-
-    void reclaim_id(unsigned int id) {
-        GlobalLogSection _("reclaim_id");
-        global_logger->debug("reclaiming id: {}", id);
-        auto it = used_ids.find(id);
-        if (it != used_ids.end()) {
-            used_ids.erase(it);
-            reclaimed_ids.push(id);
-        }
-    }
-
-    bool is_used(unsigned int id) const { return used_ids.find(id) != used_ids.end(); }
-};
-
 // everything below is deprecated but existings for legacy reasons.
 
 class IDGenerator {
